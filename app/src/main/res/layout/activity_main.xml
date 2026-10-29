@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Editor Assistente 0.1.0"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Copia, nunca move. Nunca apaga nem formata o cartão. Mantenha o app aberto durante a descarga." />
+
+        <TextView
+            android:id="@+id/txtSource"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Origem: nenhuma pasta escolhida" />
+
+        <Button
+            android:id="@+id/btnSource"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="1) Escolher pasta do cartão (origem)" />
+
+        <TextView
+            android:id="@+id/txtPrimary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Primário (SD): nenhuma pasta escolhida" />
+
+        <Button
+            android:id="@+id/btnPrimary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="2) Escolher pasta do SD (primário)" />
+
+        <TextView
+            android:id="@+id/txtCopy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Cópias (unidade externa): nenhuma pasta escolhida" />
+
+        <Button
+            android:id="@+id/btnCopy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="3) Escolher pasta da unidade externa (cópias)" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Data do evento (AAAA-MM-DD)" />
+
+        <EditText
+            android:id="@+id/edtDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="2026-10-29"
+            android:inputType="text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Nome do evento" />
+
+        <EditText
+            android:id="@+id/edtEvent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex.: Casamento Ana e Bruno"
+            android:inputType="text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Profissional" />
+
+        <EditText
+            android:id="@+id/edtProfessional"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex.: Fotografo_01"
+            android:inputType="text" />
+
+        <CheckBox
+            android:id="@+id/chkCopyJpg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:checked="true"
+            android:text="Cópia do JPG (02)" />
+
+        <CheckBox
+            android:id="@+id/chkCopyVideo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Cópia do vídeo (04)" />
+
+        <CheckBox
+            android:id="@+id/chkCopyRaw"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Cópia do RAW (06)" />
+
+        <CheckBox
+            android:id="@+id/chkHash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Verificação completa por hash (SHA-256, mais lenta)" />
+
+        <Button
+            android:id="@+id/btnAnalyze"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Analisar cartão" />
+
+        <Button
+            android:id="@+id/btnDischarge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Descarregar" />
+
+        <ProgressBar
+            android:id="@+id/progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/txtStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Pronto." />
+
+        <TextView
+            android:id="@+id/txtLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="" />
+
+        <Button
+            android:id="@+id/btnChecklist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Ver checklist do evento" />
+
+        <Button
+            android:id="@+id/btnReturned"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Marcar última descarga como devolvida" />
+
+        <Button
+            android:id="@+id/btnEject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Como ejetar com segurança" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Pastas: 01 JPG (leva Cartao_N só aqui), 02 cópia JPG, 03 vídeo, 04 cópia vídeo, 05 RAW, 06 cópia RAW. Se a pasta de cópias estiver vazia, as cópias ficam no SD, nos mesmos números 02, 04 e 06." />
+
+    </LinearLayout>
+</ScrollView>

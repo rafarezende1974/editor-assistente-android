@@ -12,12 +12,10 @@
         android:strokeLineJoin="round"
         android:pathData="M54,20 L54,62 M38,46 L54,62 L70,46" />
     <path
-        android:fillColor="none"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="5"
         android:pathData="M30,70 L78,70 M30,70 L30,82 M78,70 L78,82 M30,82 L78,82" />
     <path
-        android:fillColor="none"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="3"
         android:pathData="M54,14 m-34,0 a34,34 0,1 1,68 0 a34,34 0,1 1,-68 0" />

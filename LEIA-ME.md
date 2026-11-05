@@ -1,3 +1,38 @@
+# Editor Assistente Android v0.4.0
+
+## O que mudou na v0.4.0 (áudio + modo multicâmera)
+
+1. **Áudio como um tipo igual aos outros.** Novas pastas
+   seguindo a regra ímpar = primário, par = cópia: **07_Audio**
+   (primário, no SD) e **08_Audio_Copia** (cópia, na unidade
+   externa), planas por profissional/câmera, como 03 e 05 — sem
+   leva. Reconhece `.wav`, `.mp3`, `.m4a`, `.flac`, `.aac`,
+   `.aif`, `.aiff`, `.ogg` e `.opus` (gravadores Zoom/Tascam e
+   celular). A cópia 08 entra na chave mestra de cópias
+   (desligada = sem cópia nenhuma, nem de áudio) e tem o seu
+   checkbox "Cópia do áudio (08)", acinzentado com a chave
+   desligada. A análise mostra a contagem de áudios; o manifest
+   e a retomada, o relatório e o checklist incluem o áudio. O
+   alerta de par RAW/JPG não se aplica a áudio.
+2. **Modo Multicâmera.** Seletor "Modo: Equipe / Multicâmera"
+   na tela, salvo nas preferências. No modo Equipe (padrão)
+   tudo continua como antes. No modo Multicâmera o campo
+   "Profissional" vira "Câmera" (ex.: Camera_Palco,
+   Camera_Baterista) e só o nome da subpasta muda — o resto
+   funciona igual. O relatório mostra "Câmera:" e o modo nesse
+   caso; no checklist a coluna passou a se chamar
+   "profissional_camera" e o valor é a câmera. As sugestões do
+   campo são separadas por modo (profissionais e câmeras em
+   listas diferentes, para não misturar).
+3. **Checklist com a coluna audio — sem quebrar os antigos.**
+   O cabeçalho passou a ser
+   `data_hora,profissional_camera,leva,origem,jpg,raw,video,audio,copiados,pulados,falhas,devolvido`.
+   Um CSV de evento antigo (11 colunas, sem audio) é migrado
+   na primeira descarga nova: cabeçalho novo e "0" no audio
+   das linhas antigas. "Marcar como devolvido" continua
+   funcionando nos dois formatos, porque ele marca sempre a
+   última coluna.
+
 # Editor Assistente Android v0.3.0
 
 ## O que mudou na v0.3.0 (só visual — nenhuma função mudou)

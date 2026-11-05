@@ -9,10 +9,14 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.WindowManager
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ProgressBar
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -45,11 +49,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtCopy: TextView
     private lateinit var edtDate: EditText
     private lateinit var edtEvent: EditText
-    private lateinit var edtProfessional: EditText
+    private lateinit var edtProfessional: AutoCompleteTextView
+    private lateinit var lblProfessional: TextView
+    private lateinit var rgMode: RadioGroup
+    private lateinit var rbModeEquipe: RadioButton
+    private lateinit var rbModeMulticam: RadioButton
+    private var isMulticam = false
     private lateinit var chkCopies: CheckBox
     private lateinit var chkCopyJpg: CheckBox
     private lateinit var chkCopyVideo: CheckBox
     private lateinit var chkCopyRaw: CheckBox
+    private lateinit var chkCopyAudio: CheckBox
     private lateinit var chkHash: CheckBox
     private lateinit var txtEventTitle: TextView
     private lateinit var txtEventSubtitle: TextView
@@ -101,10 +111,15 @@ class MainActivity : AppCompatActivity() {
         edtDate = findViewById(R.id.edtDate)
         edtEvent = findViewById(R.id.edtEvent)
         edtProfessional = findViewById(R.id.edtProfessional)
+        lblProfessional = findViewById(R.id.lblProfessional)
+        rgMode = findViewById(R.id.rgMode)
+        rbModeEquipe = findViewById(R.id.rbModeEquipe)
+        rbModeMulticam = findViewById(R.id.rbModeMulticam)
         chkCopies = findViewById(R.id.chkCopies)
         chkCopyJpg = findViewById(R.id.chkCopyJpg)
         chkCopyVideo = findViewById(R.id.chkCopyVideo)
         chkCopyRaw = findViewById(R.id.chkCopyRaw)
+        chkCopyAudio = findViewById(R.id.chkCopyAudio)
         chkHash = findViewById(R.id.chkHash)
         txtEventTitle = findViewById(R.id.txtEventTitle)
         txtEventSubtitle = findViewById(R.id.txtEventSubtitle)
@@ -127,14 +142,24 @@ class MainActivity : AppCompatActivity() {
             edtDate.setText(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()))
         }
         edtEvent.setText(prefs.getString("event_name", ""))
-        edtProfessional.setText(prefs.getString("professional", ""))
+        isMulticam = prefs.getBoolean("mode_multicam", false)
+        edtProfessional.setText(prefs.getString(if (isMulticam) "camera" else "professional", ""))
         chkCopies.isChecked = prefs.getBoolean("copies_enabled", true)
         chkCopyJpg.isChecked = prefs.getBoolean("copy_jpg", true)
         chkCopyVideo.isChecked = prefs.getBoolean("copy_video", true)
         chkCopyRaw.isChecked = prefs.getBoolean("copy_raw", true)
+        chkCopyAudio.isChecked = prefs.getBoolean("copy_audio", true)
         chkHash.isChecked = prefs.getBoolean("use_hash", false)
         applyCopiesEnabled()
-        refreshEventHeader()
+        applyMode()
+        rgMode.setOnCheckedChangeListener { _, checkedId ->
+            val multicam = checkedId == R.id.rbModeMulticam
+            if (multicam == isMulticam) return@setOnCheckedChangeListener
+            isMulticam = multicam
+            prefs.edit().putBoolean("mode_multicam", isMulticam).apply()
+            edtProfessional.setText(prefs.getString(if (isMulticam) "camera" else "professional", ""))
+            applyMode()
+        }
         edtDate.doOnTextChanged { _, _, _, _ -> refreshEventHeader() }
         edtEvent.doOnTextChanged { _, _, _, _ -> refreshEventHeader() }
         edtProfessional.doOnTextChanged { _, _, _, _ -> refreshEventHeader() }
@@ -171,16 +196,47 @@ class MainActivity : AppCompatActivity() {
         return palette[index]
     }
 
+    /** Modo Multicâmera (v0.4.0): o campo vira "Câmera", o rótulo e a
+     * dica mudam, e as sugestões passam a ser as câmeras já usadas —
+     * guardadas separadas das dos profissionais, para não misturar. */
+    private fun applyMode() {
+        lblProfessional.text = if (isMulticam) "Câmera" else "Profissional"
+        edtProfessional.hint = if (isMulticam) "Ex.: Camera_Palco" else "Ex.: Fotografo_01"
+        if (isMulticam) rbModeMulticam.isChecked = true else rbModeEquipe.isChecked = true
+        setupSuggestions()
+        refreshEventHeader()
+    }
+
+    private fun setupSuggestions() {
+        val key = if (isMulticam) "names_cameras" else "names_professionals"
+        val names = prefs.getStringSet(key, emptySet())?.toList()?.sorted() ?: emptyList()
+        edtProfessional.setAdapter(
+            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, names)
+        )
+    }
+
+    /** Guarda o nome usado na lista do modo atual (e o último valor
+     * digitado, separado por modo). */
+    private fun saveUsedName(name: String) {
+        val key = if (isMulticam) "names_cameras" else "names_professionals"
+        val current = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
+        if (current.add(name)) {
+            prefs.edit().putStringSet(key, current).apply()
+        }
+        prefs.edit().putString(if (isMulticam) "camera" else "professional", name).apply()
+    }
+
     /** Cabeçalho do evento (v0.3.0, só visual): nome, data e selo
-     * colorido com o profissional. */
+     * colorido com o profissional/câmera. */
     private fun refreshEventHeader() {
         val date = edtDate.text.toString().trim()
         val event = edtEvent.text.toString().trim()
         val professional = edtProfessional.text.toString().trim()
+        val whoLabel = if (isMulticam) "Câmera" else "Profissional"
         txtEventTitle.text = event.ifEmpty { "Sem evento" }
         txtEventSubtitle.text = listOf(
             date.ifEmpty { "Sem data" },
-            if (professional.isEmpty()) "Sem profissional" else "Profissional: $professional"
+            if (professional.isEmpty()) "Sem ${whoLabel.lowercase()}" else "$whoLabel: $professional"
         ).joinToString("  •  ")
         txtProBadge.text = professional.ifEmpty { "—" }
         txtProBadge.backgroundTintList = ColorStateList.valueOf(
@@ -195,6 +251,7 @@ class MainActivity : AppCompatActivity() {
         chkCopyJpg.isEnabled = enabled
         chkCopyVideo.isEnabled = enabled
         chkCopyRaw.isEnabled = enabled
+        chkCopyAudio.isEnabled = enabled
     }
 
     private fun takePermission(uri: Uri) {
@@ -226,7 +283,12 @@ class MainActivity : AppCompatActivity() {
         val event = edtEvent.text.toString().trim()
         val professional = IngestEngine.sanitizeProfessional(edtProfessional.text.toString())
         if (date.isEmpty() || event.isEmpty() || professional.isEmpty()) {
-            Toast.makeText(this, "Preencha data, nome do evento e profissional.", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                if (isMulticam) "Preencha data, nome do evento e câmera."
+                else "Preencha data, nome do evento e profissional.",
+                Toast.LENGTH_LONG
+            ).show()
             return null
         }
         if (!Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(date)) {
@@ -257,7 +319,7 @@ class MainActivity : AppCompatActivity() {
             val result = IngestEngine.analyze(
                 this@MainActivity, sourceRoot, primaryBase, copyBase, eventFolder, professional,
                 chkCopyJpg.isChecked, chkCopyVideo.isChecked, chkCopyRaw.isChecked,
-                chkHash.isChecked, chkCopies.isChecked
+                chkCopyAudio.isChecked, chkHash.isChecked, chkCopies.isChecked
             )
             // Barra de espaço: tenta medir os volumes das pastas escolhidas.
             // Se não der para medir, mostra isso em vez de inventar número.
@@ -268,7 +330,7 @@ class MainActivity : AppCompatActivity() {
                 val text = StringBuilder()
                 text.append("Evento: $eventFolder\n")
                 text.append("Próxima leva na 01: Cartao_${result.nextLeva}\n")
-                text.append("JPG: ${result.jpg} | RAW: ${result.raw} | Vídeo: ${result.video} | Outros ignorados: ${result.other}\n")
+                text.append("JPG: ${result.jpg} | RAW: ${result.raw} | Vídeo: ${result.video} | Áudio: ${result.audio} | Outros ignorados: ${result.other}\n")
                 text.append("Total a copiar (só primário, sem cópias): ${SafTree.formatBytes(result.totalBytes)}\n")
                 if (result.copiesEnabled) {
                     text.append("Já conferidos (retomada): ${result.alreadyVerifiedCount} | Faltam copiar: ${SafTree.formatBytes(result.bytesRemainingPrimary)} no primário + ${SafTree.formatBytes(result.bytesRemainingCopy)} nas cópias\n")
@@ -345,13 +407,14 @@ class MainActivity : AppCompatActivity() {
         }
         val copyBase = copyUri?.let { SafTree.root(this, it) }
 
+        saveUsedName(professional)
         prefs.edit()
             .putString("event_name", event)
-            .putString("professional", professional)
             .putBoolean("copies_enabled", chkCopies.isChecked)
             .putBoolean("copy_jpg", chkCopyJpg.isChecked)
             .putBoolean("copy_video", chkCopyVideo.isChecked)
             .putBoolean("copy_raw", chkCopyRaw.isChecked)
+            .putBoolean("copy_audio", chkCopyAudio.isChecked)
             .putBoolean("use_hash", chkHash.isChecked)
             .apply()
 
@@ -375,6 +438,7 @@ class MainActivity : AppCompatActivity() {
                 chkCopyJpg.isChecked,
                 chkCopyVideo.isChecked,
                 chkCopyRaw.isChecked,
+                chkCopyAudio.isChecked,
                 chkHash.isChecked,
                 chkCopies.isChecked
             ) { done, total, currentName ->
@@ -390,11 +454,12 @@ class MainActivity : AppCompatActivity() {
                 lastEventPrimary = eventPrimary
                 IngestEngine.appendReport(
                     this@MainActivity, eventPrimary, professional, result,
-                    labelFor(sourceUri!!), analysis
+                    labelFor(sourceUri!!), analysis, isMulticam
                 )
                 IngestEngine.appendChecklist(
                     this@MainActivity, eventPrimary, professional, result,
-                    labelFor(sourceUri!!), analysis.jpg, analysis.raw, analysis.video
+                    labelFor(sourceUri!!), analysis.jpg, analysis.raw, analysis.video,
+                    analysis.audio
                 )
             }
             withContext(Dispatchers.Main) {

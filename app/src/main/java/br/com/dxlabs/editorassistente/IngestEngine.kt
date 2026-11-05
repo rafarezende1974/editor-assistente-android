@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-enum class FileKind { JPG, RAW, VIDEO, OTHER }
+enum class FileKind { JPG, RAW, VIDEO, AUDIO, OTHER }
 
 data class SourceFile(
     val file: DocumentFile,
@@ -31,6 +31,7 @@ data class AnalyzeResult(
     val jpg: Int,
     val raw: Int,
     val video: Int,
+    val audio: Int,
     val other: Int,
     val totalBytes: Long,
     val jpgWithoutRaw: Int,
@@ -71,6 +72,12 @@ object IngestEngine {
         // os vídeos e sinalizados pelo alerta de arquivo corrompido.
         "rsv", "tmp", "part"
     )
+    // Áudio (v0.4.0): gravadores Zoom/Tascam e celular. Vai para as
+    // pastas 07_Audio (primário) e 08_Audio_Copia, planas por
+    // profissional/câmera, como 03 e 05 — sem leva.
+    private val audioExt = setOf(
+        "wav", "mp3", "m4a", "flac", "aac", "aif", "aiff", "ogg", "opus"
+    )
 
     fun classify(name: String): FileKind {
         val ext = name.substringAfterLast('.', "").lowercase()
@@ -78,6 +85,7 @@ object IngestEngine {
             ext in jpgExt -> FileKind.JPG
             ext in rawExt -> FileKind.RAW
             ext in videoExt -> FileKind.VIDEO
+            ext in audioExt -> FileKind.AUDIO
             else -> FileKind.OTHER
         }
     }
@@ -87,6 +95,7 @@ object IngestEngine {
             FileKind.JPG -> "jpg"
             FileKind.RAW -> "raw"
             FileKind.VIDEO -> "video"
+            FileKind.AUDIO -> "audio"
             FileKind.OTHER -> "other"
         }
     }
@@ -110,6 +119,7 @@ object IngestEngine {
         copyJpg: Boolean,
         copyVideo: Boolean,
         copyRaw: Boolean,
+        copyAudio: Boolean,
         useHash: Boolean,
         copiesEnabled: Boolean = true
     ): AnalyzeResult {
@@ -121,6 +131,7 @@ object IngestEngine {
         val jpg = files.count { it.kind == FileKind.JPG }
         val raw = files.count { it.kind == FileKind.RAW }
         val video = files.count { it.kind == FileKind.VIDEO }
+        val audio = files.count { it.kind == FileKind.AUDIO }
         val other = files.count { it.kind == FileKind.OTHER }
         val total = files.filter { it.kind != FileKind.OTHER }.sumOf { it.size }
 
@@ -176,6 +187,7 @@ object IngestEngine {
                 FileKind.JPG -> copyJpg
                 FileKind.VIDEO -> copyVideo
                 FileKind.RAW -> copyRaw
+                FileKind.AUDIO -> copyAudio
                 FileKind.OTHER -> false
             }
             val verified = isAlreadyVerified(
@@ -191,7 +203,7 @@ object IngestEngine {
         }
 
         return AnalyzeResult(
-            files, jpg, raw, video, other, total,
+            files, jpg, raw, video, audio, other, total,
             jpgWithoutRaw, rawWithoutJpg, nextLeva, eventFolder,
             suspects, rollovers, rolloverSubfolder, verifiedUris,
             verifiedUris.size, bytesRemainingPrimary, bytesRemainingCopy,
@@ -243,6 +255,10 @@ object IngestEngine {
                 val dir = eventDir.findFile("05_RAW")?.findFile(professional)
                 destFileWithSize(dir, destName, item.size, subfolders)
             }
+            FileKind.AUDIO -> {
+                val dir = eventDir.findFile("07_Audio")?.findFile(professional)
+                destFileWithSize(dir, destName, item.size, subfolders)
+            }
             FileKind.OTHER -> false
         }
         if (!primaryOk) return false
@@ -252,6 +268,7 @@ object IngestEngine {
             FileKind.JPG -> copyRoot.findFile("02_Fotos_JPG_Copia")?.findFile(professional)
             FileKind.VIDEO -> copyRoot.findFile("04_Videos_Copia")?.findFile(professional)
             FileKind.RAW -> copyRoot.findFile("06_RAW_Copia")?.findFile(professional)
+            FileKind.AUDIO -> copyRoot.findFile("08_Audio_Copia")?.findFile(professional)
             FileKind.OTHER -> null
         }
         return destFileWithSize(copyDir, destName, item.size, subfolders)
@@ -341,6 +358,7 @@ object IngestEngine {
         copyJpg: Boolean,
         copyVideo: Boolean,
         copyRaw: Boolean,
+        copyAudio: Boolean,
         useHash: Boolean,
         copiesEnabled: Boolean = true,
         onProgress: (done: Int, total: Int, currentName: String) -> Unit
@@ -360,13 +378,16 @@ object IngestEngine {
         val dir01 = SafTree.dirPath(eventPrimary, listOf("01_Fotos_JPG", professional, levaName))
         val dir03 = SafTree.dirPath(eventPrimary, listOf("03_Videos", professional))
         val dir05 = SafTree.dirPath(eventPrimary, listOf("05_RAW", professional))
+        val dir07 = SafTree.dirPath(eventPrimary, listOf("07_Audio", professional))
         // Pastas de cópia (planas por profissional, sem Cartao_N).
         // Chave mestra desligada (v0.2.1): nenhuma cópia secundária —
-        // nem JPG, nem vídeo, nem RAW — só o primário (01, 03, 05).
+        // nem JPG, nem vídeo, nem RAW, nem áudio — só o primário
+        // (01, 03, 05, 07).
         val copyBaseForEvent = eventCopy ?: eventPrimary
         val dir02 = if (copiesEnabled && copyJpg) SafTree.dirPath(copyBaseForEvent, listOf("02_Fotos_JPG_Copia", professional)) else null
         val dir04 = if (copiesEnabled && copyVideo) SafTree.dirPath(copyBaseForEvent, listOf("04_Videos_Copia", professional)) else null
         val dir06 = if (copiesEnabled && copyRaw) SafTree.dirPath(copyBaseForEvent, listOf("06_RAW_Copia", professional)) else null
+        val dir08 = if (copiesEnabled && copyAudio) SafTree.dirPath(copyBaseForEvent, listOf("08_Audio_Copia", professional)) else null
         val staging = SafTree.dir(eventPrimary, ".staging")
             ?: return DischargeResult(0, 0, 1, listOf("Não consegui criar a pasta .staging."), leva, eventFolder, 0)
 
@@ -399,6 +420,7 @@ object IngestEngine {
                 FileKind.JPG -> Pair(dir01, dir02)
                 FileKind.VIDEO -> Pair(dir03, dir04)
                 FileKind.RAW -> Pair(dir05, dir06)
+                FileKind.AUDIO -> Pair(dir07, dir08)
                 FileKind.OTHER -> Pair(null, null)
             }
             if (primaryDir == null) {
@@ -618,20 +640,23 @@ object IngestEngine {
         professional: String,
         result: DischargeResult,
         sourceLabel: String,
-        analysis: AnalyzeResult
+        analysis: AnalyzeResult,
+        isMulticam: Boolean = false
     ) {
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             .format(Date())
+        val label = if (isMulticam) "Câmera" else "Profissional"
         val section = StringBuilder()
         section.append("=== Descarga $timestamp ===\n")
-        section.append("Profissional: $professional\n")
+        section.append("$label: $professional\n")
+        section.append("Modo: ${if (isMulticam) "Multicâmera" else "Equipe"}\n")
         section.append("Leva: Cartao_${result.leva}\n")
         section.append("Origem: $sourceLabel\n")
-        section.append("JPG: ${analysis.jpg} | RAW: ${analysis.raw} | Video: ${analysis.video}\n")
+        section.append("JPG: ${analysis.jpg} | RAW: ${analysis.raw} | Video: ${analysis.video} | Áudio: ${analysis.audio}\n")
         if (analysis.copiesEnabled) {
-            section.append("Cópias: ligadas (02, 04, 06)\n")
+            section.append("Cópias: ligadas (02, 04, 06, 08)\n")
         } else {
-            section.append("Cópias: DESLIGADAS — só primário (01, 03, 05); backup manual depois.\n")
+            section.append("Cópias: DESLIGADAS — só primário (01, 03, 05, 07); backup manual depois.\n")
         }
         section.append("Copiados: ${result.copied} | Pulados: ${result.skipped} | Falhas: ${result.failed}\n")
         section.append("Já conferidos (retomada): ${analysis.alreadyVerifiedCount} | Arquivos conferidos no manifest: ${result.manifestEntries}\n")
@@ -663,16 +688,44 @@ object IngestEngine {
         sourceLabel: String,
         jpg: Int,
         raw: Int,
-        video: Int
+        video: Int,
+        audio: Int
     ) {
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             .format(Date())
-        val header = "data_hora,profissional,leva,origem,jpg,raw,video,copiados,pulados,falhas,devolvido\n"
-        val line = "$timestamp,$professional,Cartao_${result.leva},$sourceLabel,$jpg,$raw,$video,${result.copied},${result.skipped},${result.failed},NAO\n"
+        // Coluna "profissional_camera": no modo Equipe o valor é o
+        // profissional, no Multicâmera é a câmera. A coluna "audio"
+        // entrou na v0.4.0; CSVs antigos (11 colunas, sem audio) são
+        // migrados na hora — cabeçalho novo e "0" no audio das linhas
+        // antigas — para as linhas novas não ficarem desalinhadas.
+        val header = "data_hora,profissional_camera,leva,origem,jpg,raw,video,audio,copiados,pulados,falhas,devolvido\n"
+        val line = "$timestamp,$professional,Cartao_${result.leva},$sourceLabel,$jpg,$raw,$video,$audio,${result.copied},${result.skipped},${result.failed},NAO\n"
         val existing = eventPrimary.findFile("checklist-descargas.csv")
         val oldText = if (existing != null) SafTree.readText(context, existing) ?: "" else ""
-        val base = if (oldText.isEmpty()) header else oldText
+        val base = if (oldText.isEmpty()) {
+            header
+        } else if (oldText.lines().firstOrNull()?.contains(",audio,") == true) {
+            oldText
+        } else {
+            migrateChecklist(oldText, header)
+        }
         SafTree.writeText(context, eventPrimary, "checklist-descargas.csv", base + line)
+    }
+
+    /** Migra um CSV antigo (sem a coluna audio) para o formato novo:
+     * cabeçalho com audio e "0" no audio das linhas antigas. */
+    private fun migrateChecklist(oldText: String, newHeader: String): String {
+        val lines = oldText.lines().filter { it.isNotBlank() }.toMutableList()
+        if (lines.isEmpty()) return newHeader
+        lines[0] = newHeader.trimEnd('\n')
+        for (i in 1 until lines.size) {
+            val parts = lines[i].split(",").toMutableList()
+            if (parts.size == 11) {
+                parts.add(7, "0")
+                lines[i] = parts.joinToString(",")
+            }
+        }
+        return lines.joinToString("\n") + "\n"
     }
 
     fun markLastReturned(context: Context, eventPrimary: DocumentFile): Boolean {
@@ -685,7 +738,9 @@ object IngestEngine {
         val lastIndex = lines.lastIndex
         val parts = lines[lastIndex].split(",").toMutableList()
         if (parts.size < 11) return false
-        parts[10] = "SIM"
+        // "devolvido" é sempre a última coluna — vale para o CSV antigo
+        // (11 colunas) e para o novo (12, com audio).
+        parts[parts.lastIndex] = "SIM"
         lines[lastIndex] = parts.joinToString(",")
         return SafTree.writeText(context, eventPrimary, "checklist-descargas.csv", lines.joinToString("\n") + "\n")
     }

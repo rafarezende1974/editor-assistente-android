@@ -13,7 +13,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Editor Assistente 0.3.0"
+            android:text="Editor Assistente 0.4.0"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -262,12 +262,42 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:text="Modo da descarga" />
+
+                <RadioGroup
+                    android:id="@+id/rgMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbModeEquipe"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Equipe" />
+
+                    <RadioButton
+                        android:id="@+id/rbModeMulticam"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="Multicâmera" />
+
+                </RadioGroup>
+
+                <TextView
+                    android:id="@+id/lblProfessional"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
                     android:text="Profissional" />
 
-                <EditText
+                <AutoCompleteTextView
                     android:id="@+id/edtProfessional"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:completionThreshold="1"
                     android:hint="Ex.: Fotografo_01"
                     android:inputType="text" />
 
@@ -300,6 +330,13 @@
                     android:layout_height="wrap_content"
                     android:checked="true"
                     android:text="Cópia do RAW (06)" />
+
+                <CheckBox
+                    android:id="@+id/chkCopyAudio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="Cópia do áudio (08)" />
 
                 <CheckBox
                     android:id="@+id/chkHash"
@@ -406,7 +443,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Pastas: 01 JPG (leva Cartao_N só aqui), 02 cópia JPG, 03 vídeo, 04 cópia vídeo, 05 RAW, 06 cópia RAW. Se a pasta de cópias estiver vazia, as cópias ficam no SD, nos mesmos números 02, 04 e 06." />
+            android:text="Pastas: 01 JPG (leva Cartao_N só aqui), 02 cópia JPG, 03 vídeo, 04 cópia vídeo, 05 RAW, 06 cópia RAW, 07 áudio, 08 cópia áudio. Se a pasta de cópias estiver vazia, as cópias ficam no SD, nos mesmos números 02, 04, 06 e 08. No modo Multicâmera, a subpasta é o nome da câmera em vez do profissional." />
 
     </LinearLayout>
 </ScrollView>

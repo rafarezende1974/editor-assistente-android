@@ -1,3 +1,29 @@
+# Editor Assistente Android v0.3.0
+
+## O que mudou na v0.3.0 (só visual — nenhuma função mudou)
+
+Reformulação visual inspirada na linguagem do Descarrega (tela
+limpa, cartões, progresso grande, cor por pessoa), sem copiar
+marca, nome, logo ou textos dele. Estrutura 01–06, leva
+`Cartao_N` só na 01, checklist, relatório, manifest, retomada,
+alertas, chave de cópias e pacote continuam exatamente iguais.
+
+- **Cabeçalho do evento:** um cartão no topo com o nome do
+  evento, a data e o profissional, e um selo colorido com o nome
+  do profissional. A cor é determinística pelo nome, de uma
+  paleta fixa de 6 cores — o mesmo profissional sempre com a
+  mesma cor. O cabeçalho é atualizado enquanto se digita.
+- **Cartões de destino:** origem, "Primário (SD)" e "Cópias
+  (unidade externa)" viraram cartões, cada um com o seu botão e,
+  no caso dos destinos, com a sua barra de espaço e o texto
+  livre/total dentro do cartão (mesma medição da v0.2.0).
+- **Progresso grande:** barra de descarga maior, com o
+  percentual em destaque ao lado da linha de status
+  ("Analisando…", "Copiando…", "Concluído").
+- **Tema claro/escuro:** os cartões usam as cores do tema
+  Material3 `DayNight`, então seguem o tema do sistema e ficam
+  legíveis nos dois — nada de cor fixa clara ou escura.
+
 # Editor Assistente Android v0.2.1
 
 ## O que mudou na v0.2.1 (chave mestra das cópias)

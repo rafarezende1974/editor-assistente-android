@@ -2,6 +2,8 @@ package br.com.dxlabs.editorassistente
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
@@ -15,6 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.widget.doOnTextChanged
 import androidx.appcompat.app.AppCompatActivity
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
@@ -48,7 +51,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var chkCopyVideo: CheckBox
     private lateinit var chkCopyRaw: CheckBox
     private lateinit var chkHash: CheckBox
+    private lateinit var txtEventTitle: TextView
+    private lateinit var txtEventSubtitle: TextView
+    private lateinit var txtProBadge: TextView
     private lateinit var txtStatus: TextView
+    private lateinit var txtProgressPercent: TextView
     private lateinit var txtLog: TextView
     private lateinit var progress: ProgressBar
     private lateinit var btnDischarge: Button
@@ -99,7 +106,11 @@ class MainActivity : AppCompatActivity() {
         chkCopyVideo = findViewById(R.id.chkCopyVideo)
         chkCopyRaw = findViewById(R.id.chkCopyRaw)
         chkHash = findViewById(R.id.chkHash)
+        txtEventTitle = findViewById(R.id.txtEventTitle)
+        txtEventSubtitle = findViewById(R.id.txtEventSubtitle)
+        txtProBadge = findViewById(R.id.txtProBadge)
         txtStatus = findViewById(R.id.txtStatus)
+        txtProgressPercent = findViewById(R.id.txtProgressPercent)
         txtLog = findViewById(R.id.txtLog)
         progress = findViewById(R.id.progress)
         btnDischarge = findViewById(R.id.btnDischarge)
@@ -123,6 +134,10 @@ class MainActivity : AppCompatActivity() {
         chkCopyRaw.isChecked = prefs.getBoolean("copy_raw", true)
         chkHash.isChecked = prefs.getBoolean("use_hash", false)
         applyCopiesEnabled()
+        refreshEventHeader()
+        edtDate.doOnTextChanged { _, _, _, _ -> refreshEventHeader() }
+        edtEvent.doOnTextChanged { _, _, _, _ -> refreshEventHeader() }
+        edtProfessional.doOnTextChanged { _, _, _, _ -> refreshEventHeader() }
         chkCopies.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("copies_enabled", isChecked).apply()
             applyCopiesEnabled()
@@ -138,6 +153,39 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnEject).setOnClickListener { showEjectHelp() }
 
         refreshLabels()
+    }
+
+    /** Cor do profissional (v0.3.0, só visual): determinística pelo
+     * nome, de uma paleta fixa de 6 cores — o mesmo profissional
+     * sempre com a mesma cor, nos dois temas. */
+    private fun professionalColor(name: String): Int {
+        val palette = intArrayOf(
+            Color.parseColor("#2563EB"), // azul
+            Color.parseColor("#059669"), // verde
+            Color.parseColor("#D97706"), // âmbar
+            Color.parseColor("#DB2777"), // rosa
+            Color.parseColor("#7C3AED"), // violeta
+            Color.parseColor("#0891B2")  // ciano
+        )
+        val index = (name.hashCode() and 0x7fffffff) % palette.size
+        return palette[index]
+    }
+
+    /** Cabeçalho do evento (v0.3.0, só visual): nome, data e selo
+     * colorido com o profissional. */
+    private fun refreshEventHeader() {
+        val date = edtDate.text.toString().trim()
+        val event = edtEvent.text.toString().trim()
+        val professional = edtProfessional.text.toString().trim()
+        txtEventTitle.text = event.ifEmpty { "Sem evento" }
+        txtEventSubtitle.text = listOf(
+            date.ifEmpty { "Sem data" },
+            if (professional.isEmpty()) "Sem profissional" else "Profissional: $professional"
+        ).joinToString("  •  ")
+        txtProBadge.text = professional.ifEmpty { "—" }
+        txtProBadge.backgroundTintList = ColorStateList.valueOf(
+            if (professional.isEmpty()) Color.parseColor("#64748B") else professionalColor(professional)
+        )
     }
 
     /** Chave mestra (v0.2.1): com as cópias desligadas, as opções por
@@ -309,6 +357,9 @@ class MainActivity : AppCompatActivity() {
 
         dischargeRunning = true
         btnDischarge.isEnabled = false
+        progress.progress = 0
+        txtProgressPercent.text = "0%"
+        txtStatus.text = "Copiando…"
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "EditorAssistente:discharge")
@@ -328,7 +379,9 @@ class MainActivity : AppCompatActivity() {
                 chkCopies.isChecked
             ) { done, total, currentName ->
                 lifecycleScope.launch(Dispatchers.Main) {
-                    progress.progress = if (total > 0) (done * 100 / total) else 0
+                    val percent = if (total > 0) (done * 100 / total) else 0
+                    progress.progress = percent
+                    txtProgressPercent.text = "$percent%"
                     txtStatus.text = "Descarregando $done de $total: $currentName"
                 }
             }
@@ -346,6 +399,7 @@ class MainActivity : AppCompatActivity() {
             }
             withContext(Dispatchers.Main) {
                 progress.progress = 100
+                txtProgressPercent.text = "100%"
                 val text = StringBuilder()
                 text.append("Descarga concluída.\n")
                 text.append("Leva: Cartao_${result.leva}\n")

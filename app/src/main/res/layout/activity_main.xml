@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
@@ -12,7 +13,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Editor Assistente 0.2.1"
+            android:text="Editor Assistente 0.3.0"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -22,186 +23,365 @@
             android:layout_marginTop="4dp"
             android:text="Copia, nunca move. Nunca apaga nem formata o cartão. Mantenha o app aberto durante a descarga." />
 
-        <TextView
-            android:id="@+id/txtSource"
+        <!-- Cabeçalho do evento (v0.3.0, só visual) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardEventHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Origem: nenhuma pasta escolhida" />
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
-        <Button
-            android:id="@+id/btnSource"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="1) Escolher pasta do cartão (origem)" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <TextView
-            android:id="@+id/txtPrimary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Primário (SD): nenhuma pasta escolhida" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/btnPrimary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="2) Escolher pasta do SD (primário)" />
+                    <TextView
+                        android:id="@+id/txtEventTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Sem evento"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/txtCopy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Cópias (unidade externa): nenhuma pasta escolhida" />
+                    <TextView
+                        android:id="@+id/txtProBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/badge_background"
+                        android:paddingStart="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="6dp"
+                        android:text="—"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnCopy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="3) Escolher pasta da unidade externa (cópias)" />
+                </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Data do evento (AAAA-MM-DD)" />
+                <TextView
+                    android:id="@+id/txtEventSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Preencha data, evento e profissional abaixo." />
 
-        <EditText
-            android:id="@+id/edtDate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="2026-10-29"
-            android:inputType="text" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Nome do evento" />
-
-        <EditText
-            android:id="@+id/edtEvent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Ex.: Casamento Ana e Bruno"
-            android:inputType="text" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Profissional" />
-
-        <EditText
-            android:id="@+id/edtProfessional"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Ex.: Fotografo_01"
-            android:inputType="text" />
-
-        <CheckBox
-            android:id="@+id/chkCopies"
+        <!-- Cartão: origem -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:checked="true"
-            android:text="Fazer cópias em outra unidade (02, 04, 06) — desmarque para descarregar mais rápido e fazer o backup depois" />
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
-        <CheckBox
-            android:id="@+id/chkCopyJpg"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/txtSource"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Origem: nenhuma pasta escolhida"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnSource"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="1) Escolher pasta do cartão (origem)" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Cartão: primário (SD) -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:checked="true"
-            android:text="Cópia do JPG (02)" />
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
-        <CheckBox
-            android:id="@+id/chkCopyVideo"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/txtPrimary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Primário (SD): nenhuma pasta escolhida"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnPrimary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="2) Escolher pasta do SD (primário)" />
+
+                <TextView
+                    android:id="@+id/txtSpacePrimary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Espaço (SD): ainda não medido." />
+
+                <ProgressBar
+                    android:id="@+id/progressSpacePrimary"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="6dp"
+                    android:max="100"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Cartão: cópias (unidade externa) -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Cópia do vídeo (04)" />
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
-        <CheckBox
-            android:id="@+id/chkCopyRaw"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/txtCopy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cópias (unidade externa): nenhuma pasta escolhida"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnCopy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="3) Escolher pasta da unidade externa (cópias)" />
+
+                <TextView
+                    android:id="@+id/txtSpaceCopy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Espaço (externa): ainda não medido." />
+
+                <ProgressBar
+                    android:id="@+id/progressSpaceCopy"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="6dp"
+                    android:max="100"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Cartão: evento e opções -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Cópia do RAW (06)" />
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
-        <CheckBox
-            android:id="@+id/chkHash"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Data do evento (AAAA-MM-DD)" />
+
+                <EditText
+                    android:id="@+id/edtDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="2026-10-29"
+                    android:inputType="text" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Nome do evento" />
+
+                <EditText
+                    android:id="@+id/edtEvent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Ex.: Casamento Ana e Bruno"
+                    android:inputType="text" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Profissional" />
+
+                <EditText
+                    android:id="@+id/edtProfessional"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Ex.: Fotografo_01"
+                    android:inputType="text" />
+
+                <CheckBox
+                    android:id="@+id/chkCopies"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:checked="true"
+                    android:text="Fazer cópias em outra unidade (02, 04, 06) — desmarque para descarregar mais rápido e fazer o backup depois" />
+
+                <CheckBox
+                    android:id="@+id/chkCopyJpg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:checked="true"
+                    android:text="Cópia do JPG (02)" />
+
+                <CheckBox
+                    android:id="@+id/chkCopyVideo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="Cópia do vídeo (04)" />
+
+                <CheckBox
+                    android:id="@+id/chkCopyRaw"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="Cópia do RAW (06)" />
+
+                <CheckBox
+                    android:id="@+id/chkHash"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Verificação completa por hash (SHA-256, mais lenta)" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Cartão: progresso grande -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Verificação completa por hash (SHA-256, mais lenta)" />
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
-        <Button
-            android:id="@+id/btnAnalyze"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Analisar cartão" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <Button
-            android:id="@+id/btnDischarge"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Descarregar" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-        <ProgressBar
-            android:id="@+id/progress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:max="100" />
+                    <TextView
+                        android:id="@+id/txtStatus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Pronto."
+                        android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/txtStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Pronto." />
+                    <TextView
+                        android:id="@+id/txtProgressPercent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/txtLog"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="" />
+                </LinearLayout>
 
-        <TextView
-            android:id="@+id/txtSpacePrimary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Espaço (SD): ainda não medido." />
+                <ProgressBar
+                    android:id="@+id/progress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp"
+                    android:layout_marginTop="10dp"
+                    android:max="100" />
 
-        <ProgressBar
-            android:id="@+id/progressSpacePrimary"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:max="100"
-            android:visibility="gone" />
+                <Button
+                    android:id="@+id/btnAnalyze"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Analisar cartão" />
 
-        <TextView
-            android:id="@+id/txtSpaceCopy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Espaço (externa): ainda não medido." />
+                <Button
+                    android:id="@+id/btnDischarge"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Descarregar" />
 
-        <ProgressBar
-            android:id="@+id/progressSpaceCopy"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:max="100"
-            android:visibility="gone" />
+                <TextView
+                    android:id="@+id/txtLog"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <Button
             android:id="@+id/btnChecklist"

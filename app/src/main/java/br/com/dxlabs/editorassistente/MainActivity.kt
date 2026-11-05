@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var edtDate: EditText
     private lateinit var edtEvent: EditText
     private lateinit var edtProfessional: EditText
+    private lateinit var chkCopies: CheckBox
     private lateinit var chkCopyJpg: CheckBox
     private lateinit var chkCopyVideo: CheckBox
     private lateinit var chkCopyRaw: CheckBox
@@ -93,6 +94,7 @@ class MainActivity : AppCompatActivity() {
         edtDate = findViewById(R.id.edtDate)
         edtEvent = findViewById(R.id.edtEvent)
         edtProfessional = findViewById(R.id.edtProfessional)
+        chkCopies = findViewById(R.id.chkCopies)
         chkCopyJpg = findViewById(R.id.chkCopyJpg)
         chkCopyVideo = findViewById(R.id.chkCopyVideo)
         chkCopyRaw = findViewById(R.id.chkCopyRaw)
@@ -115,10 +117,16 @@ class MainActivity : AppCompatActivity() {
         }
         edtEvent.setText(prefs.getString("event_name", ""))
         edtProfessional.setText(prefs.getString("professional", ""))
+        chkCopies.isChecked = prefs.getBoolean("copies_enabled", true)
         chkCopyJpg.isChecked = prefs.getBoolean("copy_jpg", true)
         chkCopyVideo.isChecked = prefs.getBoolean("copy_video", true)
         chkCopyRaw.isChecked = prefs.getBoolean("copy_raw", true)
         chkHash.isChecked = prefs.getBoolean("use_hash", false)
+        applyCopiesEnabled()
+        chkCopies.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("copies_enabled", isChecked).apply()
+            applyCopiesEnabled()
+        }
 
         findViewById<Button>(R.id.btnSource).setOnClickListener { pickSource.launch(null) }
         findViewById<Button>(R.id.btnPrimary).setOnClickListener { pickPrimary.launch(null) }
@@ -130,6 +138,15 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnEject).setOnClickListener { showEjectHelp() }
 
         refreshLabels()
+    }
+
+    /** Chave mestra (v0.2.1): com as cópias desligadas, as opções por
+     * tipo ficam acinzentadas — nenhuma cópia secundária é feita. */
+    private fun applyCopiesEnabled() {
+        val enabled = chkCopies.isChecked
+        chkCopyJpg.isEnabled = enabled
+        chkCopyVideo.isEnabled = enabled
+        chkCopyRaw.isEnabled = enabled
     }
 
     private fun takePermission(uri: Uri) {
@@ -192,7 +209,7 @@ class MainActivity : AppCompatActivity() {
             val result = IngestEngine.analyze(
                 this@MainActivity, sourceRoot, primaryBase, copyBase, eventFolder, professional,
                 chkCopyJpg.isChecked, chkCopyVideo.isChecked, chkCopyRaw.isChecked,
-                chkHash.isChecked
+                chkHash.isChecked, chkCopies.isChecked
             )
             // Barra de espaço: tenta medir os volumes das pastas escolhidas.
             // Se não der para medir, mostra isso em vez de inventar número.
@@ -205,7 +222,12 @@ class MainActivity : AppCompatActivity() {
                 text.append("Próxima leva na 01: Cartao_${result.nextLeva}\n")
                 text.append("JPG: ${result.jpg} | RAW: ${result.raw} | Vídeo: ${result.video} | Outros ignorados: ${result.other}\n")
                 text.append("Total a copiar (só primário, sem cópias): ${SafTree.formatBytes(result.totalBytes)}\n")
-                text.append("Já conferidos (retomada): ${result.alreadyVerifiedCount} | Faltam copiar: ${SafTree.formatBytes(result.bytesRemainingPrimary)} no primário + ${SafTree.formatBytes(result.bytesRemainingCopy)} nas cópias\n")
+                if (result.copiesEnabled) {
+                    text.append("Já conferidos (retomada): ${result.alreadyVerifiedCount} | Faltam copiar: ${SafTree.formatBytes(result.bytesRemainingPrimary)} no primário + ${SafTree.formatBytes(result.bytesRemainingCopy)} nas cópias\n")
+                } else {
+                    text.append("Cópias desligadas — só primário.\n")
+                    text.append("Já conferidos (retomada): ${result.alreadyVerifiedCount} | Faltam copiar: ${SafTree.formatBytes(result.bytesRemainingPrimary)} no primário (backup manual depois)\n")
+                }
                 if (result.jpgWithoutRaw > 0) text.append("Atenção: ${result.jpgWithoutRaw} JPG sem RAW.\n")
                 if (result.rawWithoutJpg > 0) text.append("Atenção: ${result.rawWithoutJpg} RAW sem JPG.\n")
                 if (result.suspects.isNotEmpty()) {
@@ -227,7 +249,12 @@ class MainActivity : AppCompatActivity() {
                 val primaryNeed = result.bytesRemainingPrimary +
                     if (copyUri == null) result.bytesRemainingCopy else 0L
                 showSpace(txtSpacePrimary, progressSpacePrimary, primarySpace, primaryNeed, "Primário (SD)")
-                showSpace(txtSpaceCopy, progressSpaceCopy, copySpace, result.bytesRemainingCopy, "Cópias (externa)")
+                if (result.copiesEnabled) {
+                    showSpace(txtSpaceCopy, progressSpaceCopy, copySpace, result.bytesRemainingCopy, "Cópias (externa)")
+                } else {
+                    txtSpaceCopy.text = "Cópias (externa): desligadas — só primário. Faça o backup depois."
+                    progressSpaceCopy.visibility = android.view.View.GONE
+                }
             }
         }
     }
@@ -273,6 +300,7 @@ class MainActivity : AppCompatActivity() {
         prefs.edit()
             .putString("event_name", event)
             .putString("professional", professional)
+            .putBoolean("copies_enabled", chkCopies.isChecked)
             .putBoolean("copy_jpg", chkCopyJpg.isChecked)
             .putBoolean("copy_video", chkCopyVideo.isChecked)
             .putBoolean("copy_raw", chkCopyRaw.isChecked)
@@ -296,7 +324,8 @@ class MainActivity : AppCompatActivity() {
                 chkCopyJpg.isChecked,
                 chkCopyVideo.isChecked,
                 chkCopyRaw.isChecked,
-                chkHash.isChecked
+                chkHash.isChecked,
+                chkCopies.isChecked
             ) { done, total, currentName ->
                 lifecycleScope.launch(Dispatchers.Main) {
                     progress.progress = if (total > 0) (done * 100 / total) else 0

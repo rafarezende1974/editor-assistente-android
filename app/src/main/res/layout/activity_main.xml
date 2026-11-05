@@ -12,7 +12,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Editor Assistente 0.2.0"
+            android:text="Editor Assistente 0.2.1"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -101,10 +101,18 @@
             android:inputType="text" />
 
         <CheckBox
-            android:id="@+id/chkCopyJpg"
+            android:id="@+id/chkCopies"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:checked="true"
+            android:text="Fazer cópias em outra unidade (02, 04, 06) — desmarque para descarregar mais rápido e fazer o backup depois" />
+
+        <CheckBox
+            android:id="@+id/chkCopyJpg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:checked="true"
             android:text="Cópia do JPG (02)" />
 

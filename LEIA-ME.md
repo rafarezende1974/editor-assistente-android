@@ -1,3 +1,23 @@
+# Editor Assistente Android v0.2.1
+
+## O que mudou na v0.2.1 (chave mestra das cópias)
+
+- **Cópias em outra unidade passam a ser uma opção selecionável.**
+  Nova chave na tela, acima das opções por tipo: "Fazer cópias em
+  outra unidade (02, 04, 06) — desmarque para descarregar mais
+  rápido e fazer o backup depois".
+- **Ligada (padrão):** tudo como antes — cópias 02/04/06 conforme
+  as opções por tipo.
+- **Desligada:** nenhuma cópia secundária é feita (nem JPG, nem
+  vídeo, nem RAW); a descarga vai só para o primário (01, 03, 05)
+  e fica mais rápida. As opções por tipo ficam acinzentadas na
+  tela. A análise mostra "cópias desligadas — só primário" e o
+  cálculo de espaço considera só o primário. A retomada continua
+  funcionando nesse modo (um arquivo conta como conferido se o
+  primário existir com o mesmo tamanho) e o relatório registra
+  que as cópias estavam desligadas nessa descarga.
+- A escolha é salva nas preferências e lembrada ao reabrir o app.
+
 # Editor Assistente Android v0.2.0
 
 Versão Android do Editor Assistente, para a Galaxy Tab S9+ (e outros

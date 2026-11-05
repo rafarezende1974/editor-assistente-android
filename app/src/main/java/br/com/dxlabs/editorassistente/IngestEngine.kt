@@ -43,7 +43,8 @@ data class AnalyzeResult(
     val verifiedUris: Set<String>,
     val alreadyVerifiedCount: Int,
     val bytesRemainingPrimary: Long,
-    val bytesRemainingCopy: Long
+    val bytesRemainingCopy: Long,
+    val copiesEnabled: Boolean
 )
 
 data class DischargeResult(
@@ -109,7 +110,8 @@ object IngestEngine {
         copyJpg: Boolean,
         copyVideo: Boolean,
         copyRaw: Boolean,
-        useHash: Boolean
+        useHash: Boolean,
+        copiesEnabled: Boolean = true
     ): AnalyzeResult {
         val all = mutableListOf<DocumentFile>()
         SafTree.walkFiles(sourceRoot, all)
@@ -168,7 +170,9 @@ object IngestEngine {
         var bytesRemainingCopy = 0L
         for (item in files) {
             if (item.kind == FileKind.OTHER) continue
-            val copyEnabled = when (item.kind) {
+            // Chave mestra (v0.2.1): com as cópias desligadas, nenhuma
+            // cópia secundária é feita nem contada, seja qual for o tipo.
+            val copyEnabled = copiesEnabled && when (item.kind) {
                 FileKind.JPG -> copyJpg
                 FileKind.VIDEO -> copyVideo
                 FileKind.RAW -> copyRaw
@@ -190,7 +194,8 @@ object IngestEngine {
             files, jpg, raw, video, other, total,
             jpgWithoutRaw, rawWithoutJpg, nextLeva, eventFolder,
             suspects, rollovers, rolloverSubfolder, verifiedUris,
-            verifiedUris.size, bytesRemainingPrimary, bytesRemainingCopy
+            verifiedUris.size, bytesRemainingPrimary, bytesRemainingCopy,
+            copiesEnabled
         )
     }
 
@@ -337,6 +342,7 @@ object IngestEngine {
         copyVideo: Boolean,
         copyRaw: Boolean,
         useHash: Boolean,
+        copiesEnabled: Boolean = true,
         onProgress: (done: Int, total: Int, currentName: String) -> Unit
     ): DischargeResult {
         val eventFolder = analysis.eventFolderName
@@ -355,10 +361,12 @@ object IngestEngine {
         val dir03 = SafTree.dirPath(eventPrimary, listOf("03_Videos", professional))
         val dir05 = SafTree.dirPath(eventPrimary, listOf("05_RAW", professional))
         // Pastas de cópia (planas por profissional, sem Cartao_N).
+        // Chave mestra desligada (v0.2.1): nenhuma cópia secundária —
+        // nem JPG, nem vídeo, nem RAW — só o primário (01, 03, 05).
         val copyBaseForEvent = eventCopy ?: eventPrimary
-        val dir02 = if (copyJpg) SafTree.dirPath(copyBaseForEvent, listOf("02_Fotos_JPG_Copia", professional)) else null
-        val dir04 = if (copyVideo) SafTree.dirPath(copyBaseForEvent, listOf("04_Videos_Copia", professional)) else null
-        val dir06 = if (copyRaw) SafTree.dirPath(copyBaseForEvent, listOf("06_RAW_Copia", professional)) else null
+        val dir02 = if (copiesEnabled && copyJpg) SafTree.dirPath(copyBaseForEvent, listOf("02_Fotos_JPG_Copia", professional)) else null
+        val dir04 = if (copiesEnabled && copyVideo) SafTree.dirPath(copyBaseForEvent, listOf("04_Videos_Copia", professional)) else null
+        val dir06 = if (copiesEnabled && copyRaw) SafTree.dirPath(copyBaseForEvent, listOf("06_RAW_Copia", professional)) else null
         val staging = SafTree.dir(eventPrimary, ".staging")
             ?: return DischargeResult(0, 0, 1, listOf("Não consegui criar a pasta .staging."), leva, eventFolder, 0)
 
@@ -620,6 +628,11 @@ object IngestEngine {
         section.append("Leva: Cartao_${result.leva}\n")
         section.append("Origem: $sourceLabel\n")
         section.append("JPG: ${analysis.jpg} | RAW: ${analysis.raw} | Video: ${analysis.video}\n")
+        if (analysis.copiesEnabled) {
+            section.append("Cópias: ligadas (02, 04, 06)\n")
+        } else {
+            section.append("Cópias: DESLIGADAS — só primário (01, 03, 05); backup manual depois.\n")
+        }
         section.append("Copiados: ${result.copied} | Pulados: ${result.skipped} | Falhas: ${result.failed}\n")
         section.append("Já conferidos (retomada): ${analysis.alreadyVerifiedCount} | Arquivos conferidos no manifest: ${result.manifestEntries}\n")
         if (analysis.suspects.isNotEmpty()) {

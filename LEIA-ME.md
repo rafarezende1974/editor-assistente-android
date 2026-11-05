@@ -1,10 +1,69 @@
-# Editor Assistente Android v0.1.0
+# Editor Assistente Android v0.2.0
 
 Versão Android do Editor Assistente, para a Galaxy Tab S9+ (e outros
 tablets Android). Mesma lógica da versão Windows v1.5.2, adaptada para o
 Android: a origem é o cartão do fotógrafo ligado por leitor USB no hub,
 o primário (01, 03, 05) fica no cartão SD do tablet e as cópias
 (02, 04, 06) ficam numa unidade externa ligada ao hub.
+
+## O que mudou na v0.2.0 (ideias do Descarrega, adaptadas)
+
+1. **Retomada persistente.** O arquivo `manifest-descarga.json`
+   fica na pasta do evento, no primário, com uma entrada por arquivo
+   já conferido: profissional, tipo, nome, tamanho e hash SHA-256
+   quando o modo hash está ligado (senão, hash nulo). Na análise, um
+   arquivo só conta como "já conferido" se a entrada existir no
+   manifest E os arquivos de destino (primário e cópia, quando a
+   cópia estiver ligada) existirem com o mesmo tamanho — quem decide
+   é o HD, nunca só o manifest. Arquivos já conferidos são pulados
+   sem recópia e a análise mostra quantos já estão conferidos e
+   quantos bytes faltam copiar. Cada arquivo é gravado no manifest
+   ao concluir (primário + cópia).
+2. **Alerta de arquivo possivelmente corrompido.** Na análise e no
+   relatório, com a mensagem "pode estar interrompido — não formate
+   o cartão antes de ver". Sinais: tamanho 0; vídeo MP4/MOV sem o
+   átomo 'moov' no primeiro nem no último 1 MB; vídeo com menos de
+   1 KB; extensão .rsv/.tmp/.part. O arquivo é copiado mesmo assim
+   (o alerta nunca pula arquivo) — só é pulado se já estava
+   conferido numa descarga anterior. É um alerta, NÃO um laudo:
+   só abrir o arquivo diz se ele está bom de verdade. Os arquivos
+   .rsv/.tmp/.part são copiados junto com os vídeos.
+3. **Contador zerado (C9999 -> C0001).** Na análise, os arquivos são
+   agrupados por prefixo e tipo, ordenados por data de modificação,
+   e a virada é detectada quando o número cai de >= 9900 para
+   <= 100. Os arquivos pós-virada vão para a subpasta
+   `ZEROU - A PARTIR DE <prefixo><número>` dentro da pasta de
+   destino deles (01 leva, 02, 03, 04, 05 ou 06), sem renomear nada.
+   O aviso vai para a análise e para o relatório.
+4. **Barra de espaço.** Na análise, a tela mostra espaço livre e
+   total e uma barra de progresso do primário (SD) e, quando houver
+   pasta de cópias, também da unidade externa, junto com o total a
+   copiar. O volume é medido com StorageManager/StatFs pelo
+   diretório do volume da pasta escolhida. A falta de medição nunca
+   bloqueia a descarga.
+
+## Limitações honestas da v0.2.0
+
+- **Espaço pode não ser mensurável.** Via SAF não há caminho de
+  arquivo direto; se o volume não expuser diretório (alguns
+  pendrives/OTG, ou Android abaixo do 11), a tela mostra "espaço
+  livre: não foi possível medir" em vez de inventar número.
+- **Retomada valida existência + tamanho no HD.** O hash do
+  manifest, quando existe, fica registrado para auditoria; a
+  conferência da retomada não re-hash o cartão inteiro a cada
+  análise (seria ler o cartão todo de novo). O manifest é
+  reescrito a cada arquivo conferido — em cartões com milhares de
+  arquivos isso custa tempo de escrita no SD.
+- **Alerta de corrupção não é laudo.** O teste do 'moov' lê só o
+  primeiro e o último 1 MB de cada MP4/MOV (a análise fica mais
+  lenta com muitos vídeos), e um arquivo pode estar ruim mesmo
+  com 'moov' presente — e vice-versa.
+- **Contador zerado depende da data de modificação.** Se o
+  cartão/SAF não entregar datas (0 para todos), a ordem é a da
+  varredura e a virada pode não ser detectada.
+- **JPG de leva anterior.** Além do manifest, a descarga também
+  não duplica na 01 um JPG já presente numa leva anterior (regra
+  da v1.5 do Windows) — a cópia plana em 02 continua garantida.
 
 Pacote: `br.com.dxlabs.editorassistente`
 Kotlin + Views/XML, AGP 8.5.2, Kotlin 2.0.20, minSdk 29, targetSdk 34.
@@ -36,9 +95,10 @@ Sem Gradle wrapper (o CI usa o Gradle do sistema, como no DX Studio).
   mover confiável entre pastas, então o fluxo é origem -> staging ->
   final -> cópia. O editor nunca vê arquivo parcial, ao custo de uma
   cópia extra dentro do primário. Em cartões grandes, isso custa tempo.
-- **Sem medição de espaço livre no destino.** A análise mostra o
-  total a copiar; o espaço livre no SD e na unidade externa tem de
-  ser conferido à mão antes de descarregar.
+- **Espaço livre no destino (v0.2.0).** A análise tenta medir o
+  espaço do SD e da unidade externa; quando não dá para medir, a
+  tela avisa em vez de inventar número, e a descarga não é
+  bloqueada por isso.
 - **Sem serviço em primeiro plano.** A descarga roda com a tela
   acesa (WakeLock + FLAG_KEEP_SCREEN_ON). Mantenha o app aberto
   durante a descarga; minimizar ou bloquear a tela pode interrompê-la.
@@ -52,14 +112,15 @@ Sem Gradle wrapper (o CI usa o Gradle do sistema, como no DX Studio).
 
 ## Build
 
-Repositório: `rafarezende1974/editor-assistente-android` (a criar).
-A integração do Muse não cria repositórios nem arquivos de workflow:
-o repositório é criado vazio pela web, o código é subido via push e
-o workflow é criado pela web colando `BUILD-WORKFLOW.yml.txt` em
-`.github/workflows/build-apk.yml`. O artefato é
-`editor-assistente-apk`, com `app-debug.apk` dentro. APK de debug,
-sem assinatura de release nesta versão (mesmo ritual do DX Studio:
-depois, se quiser, assina-se com a chave DX Labs).
+Repositório: `rafarezende1974/editor-assistente-android` (criado em
+2026-10-29; workflow `.github/workflows/build-apk.yml` criado pela
+web colando `BUILD-WORKFLOW.yml.txt`). O artefato é
+`editor-assistente-apk`, com `app-debug.apk` dentro. A v0.1.0 foi
+validada por ele na Tab S9+ em 2026-10-29 ("deu tudo certo").
+APK de debug, sem assinatura de release nesta versão (mesmo ritual
+do DX Studio: depois, se quiser, assina-se com a chave DX Labs).
+A v0.2.0 ainda não foi subida nem testada: os arquivos locais
+estão prontos e aguardam push + build.
 
 ## Teste recomendado na Tab S9+
 

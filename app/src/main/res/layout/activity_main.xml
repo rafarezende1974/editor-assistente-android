@@ -12,7 +12,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Editor Assistente 0.1.0"
+            android:text="Editor Assistente 0.2.0"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -162,6 +162,38 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="" />
+
+        <TextView
+            android:id="@+id/txtSpacePrimary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Espaço (SD): ainda não medido." />
+
+        <ProgressBar
+            android:id="@+id/progressSpacePrimary"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:max="100"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/txtSpaceCopy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Espaço (externa): ainda não medido." />
+
+        <ProgressBar
+            android:id="@+id/progressSpaceCopy"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:max="100"
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/btnChecklist"

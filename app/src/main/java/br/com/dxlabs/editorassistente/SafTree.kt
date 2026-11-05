@@ -72,6 +72,7 @@ object SafTree {
             lower.endsWith(".avi") -> "video/x-msvideo"
             lower.endsWith(".txt") -> "text/plain"
             lower.endsWith(".csv") -> "text/csv"
+            lower.endsWith(".json") -> "application/json"
             else -> "application/octet-stream"
         }
     }

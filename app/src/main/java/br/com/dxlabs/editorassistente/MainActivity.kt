@@ -51,6 +51,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtLog: TextView
     private lateinit var progress: ProgressBar
     private lateinit var btnDischarge: Button
+    private lateinit var txtSpacePrimary: TextView
+    private lateinit var progressSpacePrimary: ProgressBar
+    private lateinit var txtSpaceCopy: TextView
+    private lateinit var progressSpaceCopy: ProgressBar
 
     private val pickSource = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
@@ -97,6 +101,10 @@ class MainActivity : AppCompatActivity() {
         txtLog = findViewById(R.id.txtLog)
         progress = findViewById(R.id.progress)
         btnDischarge = findViewById(R.id.btnDischarge)
+        txtSpacePrimary = findViewById(R.id.txtSpacePrimary)
+        progressSpacePrimary = findViewById(R.id.progressSpacePrimary)
+        txtSpaceCopy = findViewById(R.id.txtSpaceCopy)
+        progressSpaceCopy = findViewById(R.id.progressSpaceCopy)
 
         sourceUri = prefs.getString("source_uri", null)?.let { Uri.parse(it) }
         primaryUri = prefs.getString("primary_uri", null)?.let { Uri.parse(it) }
@@ -180,7 +188,16 @@ class MainActivity : AppCompatActivity() {
         val eventFolder = IngestEngine.eventFolderName(date, event)
         txtStatus.text = "Analisando…"
         lifecycleScope.launch(Dispatchers.IO) {
-            val result = IngestEngine.analyze(this@MainActivity, sourceRoot, primaryBase, eventFolder, professional)
+            val copyBase = copyUri?.let { SafTree.root(this@MainActivity, it) }
+            val result = IngestEngine.analyze(
+                this@MainActivity, sourceRoot, primaryBase, copyBase, eventFolder, professional,
+                chkCopyJpg.isChecked, chkCopyVideo.isChecked, chkCopyRaw.isChecked,
+                chkHash.isChecked
+            )
+            // Barra de espaço: tenta medir os volumes das pastas escolhidas.
+            // Se não der para medir, mostra isso em vez de inventar número.
+            val primarySpace = primaryUri?.let { SpaceMeter.measure(this@MainActivity, it) }
+            val copySpace = copyUri?.let { SpaceMeter.measure(this@MainActivity, it) }
             withContext(Dispatchers.Main) {
                 lastAnalysis = result
                 val text = StringBuilder()
@@ -188,13 +205,53 @@ class MainActivity : AppCompatActivity() {
                 text.append("Próxima leva na 01: Cartao_${result.nextLeva}\n")
                 text.append("JPG: ${result.jpg} | RAW: ${result.raw} | Vídeo: ${result.video} | Outros ignorados: ${result.other}\n")
                 text.append("Total a copiar (só primário, sem cópias): ${SafTree.formatBytes(result.totalBytes)}\n")
+                text.append("Já conferidos (retomada): ${result.alreadyVerifiedCount} | Faltam copiar: ${SafTree.formatBytes(result.bytesRemainingPrimary)} no primário + ${SafTree.formatBytes(result.bytesRemainingCopy)} nas cópias\n")
                 if (result.jpgWithoutRaw > 0) text.append("Atenção: ${result.jpgWithoutRaw} JPG sem RAW.\n")
                 if (result.rawWithoutJpg > 0) text.append("Atenção: ${result.rawWithoutJpg} RAW sem JPG.\n")
-                text.append("Confira o espaço livre no SD e na unidade externa antes de descarregar.")
+                if (result.suspects.isNotEmpty()) {
+                    text.append("Possivelmente interrompidos (alerta, não é laudo — não formate o cartão antes de ver):\n")
+                    result.suspects.take(10).forEach {
+                        text.append("- ${it.name}: ${it.reason}\n")
+                    }
+                    if (result.suspects.size > 10) {
+                        text.append("... e mais ${result.suspects.size - 10}.\n")
+                    }
+                }
+                if (result.rollovers.isNotEmpty()) {
+                    result.rollovers.forEach {
+                        text.append("Contador zerado: ${it.prefix} (${IngestEngine.kindName(it.kind)}) — arquivos a partir de ${it.firstPostName} vão para \"${it.subfolder}\".\n")
+                    }
+                }
                 txtLog.text = text.toString()
                 txtStatus.text = "Análise pronta."
+                val primaryNeed = result.bytesRemainingPrimary +
+                    if (copyUri == null) result.bytesRemainingCopy else 0L
+                showSpace(txtSpacePrimary, progressSpacePrimary, primarySpace, primaryNeed, "Primário (SD)")
+                showSpace(txtSpaceCopy, progressSpaceCopy, copySpace, result.bytesRemainingCopy, "Cópias (externa)")
             }
         }
+    }
+
+    /** Preenche uma linha de espaço; sem medição, avisa em vez de inventar. */
+    private fun showSpace(
+        txt: TextView,
+        bar: ProgressBar,
+        space: VolumeSpace?,
+        needBytes: Long,
+        label: String
+    ) {
+        val free = space?.freeBytes
+        val total = space?.totalBytes
+        if (space == null || free == null || total == null || total <= 0) {
+            txt.text = "$label: espaço livre: não foi possível medir — confira à mão antes de descarregar."
+            bar.visibility = android.view.View.GONE
+            return
+        }
+        val usedPercent = ((total - free) * 100 / total).toInt()
+        bar.visibility = android.view.View.VISIBLE
+        bar.progress = usedPercent
+        val fits = if (free >= needBytes) "cabe" else "NÃO CABE — libere espaço"
+        txt.text = "$label (${space.label}): livres ${SafTree.formatBytes(free)} de ${SafTree.formatBytes(total)} ($usedPercent% usado) — faltam copiar ${SafTree.formatBytes(needBytes)}: $fits."
     }
 
     private fun discharge() {
@@ -251,7 +308,7 @@ class MainActivity : AppCompatActivity() {
                 lastEventPrimary = eventPrimary
                 IngestEngine.appendReport(
                     this@MainActivity, eventPrimary, professional, result,
-                    labelFor(sourceUri!!), analysis.jpg, analysis.raw, analysis.video
+                    labelFor(sourceUri!!), analysis
                 )
                 IngestEngine.appendChecklist(
                     this@MainActivity, eventPrimary, professional, result,
@@ -264,6 +321,10 @@ class MainActivity : AppCompatActivity() {
                 text.append("Descarga concluída.\n")
                 text.append("Leva: Cartao_${result.leva}\n")
                 text.append("Copiados: ${result.copied} | Pulados: ${result.skipped} | Falhas: ${result.failed}\n")
+                text.append("Arquivos conferidos no manifest: ${result.manifestEntries}\n")
+                if (analysis.suspects.isNotEmpty()) {
+                    text.append("Possivelmente interrompidos: ${analysis.suspects.size} — não formate o cartão antes de ver. Veja o relatório na pasta do evento.\n")
+                }
                 if (result.failures.isNotEmpty()) {
                     text.append("Falhas:\n")
                     result.failures.take(20).forEach { text.append("- $it\n") }
